@@ -30,11 +30,8 @@ std::vector<vertex> vertices = {
     { 0.5f,  0.5f, 0.0f},
     {-0.5f,  0.5f, 0.0f},
 
-    // second quad
-    { 1.0f, -0.5f, 0.0f},
-    { 2.0f, -0.5f, 0.0f},
-    { 2.0f,  0.5f, 0.0f},
-    { 1.0f,  0.5f, 0.0f}
+
+
 };
 
 
@@ -43,9 +40,7 @@ std::vector<unsigned int> indices = {
     0, 1, 2,
     2, 3, 0,
 
-    // second quad (offset +4)
-    4, 5, 6,
-    6, 7, 4
+
 };
 
 
@@ -203,6 +198,7 @@ int main()
     int offsetLoc = glGetUniformLocation(shaderProgram, "offset");
 
     float offset=0;
+    bool first=false;
     // Render loop
     while (!glfwWindowShouldClose(window))
     {
@@ -213,13 +209,25 @@ int main()
 
         static bool added = false;
 
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS &&!added)
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS &&!added && !first)
         {
             added = true;
 
-            Rectangles rect("firstQuad", vertices.size(), 0, 0, 1, 1);
+            Rectangles rect("firstQuad", (vertices.size()/4), 0, 0, 1, 1);
             rect.vertices_init(VBO,EBO);
             rectList[rect.name] = rect.index;
+
+            first = true;
+        }
+
+        else if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS && !added)
+        {
+            added = true;
+
+            Rectangles rect("restQuad", (vertices.size() / 4), 0, 0, 0.2, 1);
+            rect.vertices_init(VBO, EBO);
+            rectList[rect.name] = rect.index;
+
         }
 
         float time = glfwGetTime();
@@ -231,8 +239,17 @@ int main()
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
         
         // i dont want second triangle to move at all
+        if (rectList.find("firstQuad") != rectList.end())
+        {
+            glUniform1f(offsetLoc, -offset);          // send to shader
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(6 * sizeof(unsigned int) * rectList["firstQuad"]));
+
+        }
         glUniform1f(offsetLoc, 0);          // send to shader
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)(6*sizeof(unsigned int)* rectList["firstQuad"]));
+
+        glDrawElements(GL_TRIANGLES, vertices.size()/4*6, GL_UNSIGNED_INT, (void*)0);
+
+        
 
 
         glfwSwapBuffers(window);
